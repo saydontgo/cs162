@@ -7,6 +7,9 @@ int foo;
 /* UNCOMMENT THIS LINE for 3.4.3*/
 extern int recur(int i);
 
+static int a;
+
+static int b=10;
 
 /* A statically allocated, pre-initialized variable */
 volatile int stuff = 7;
@@ -18,7 +21,7 @@ int main(int argc, char *argv[]) {
     #include "printer.c"
 
     /* Dynamically allocate some stuff */
-    volatile char *buf1 = malloc(100);
+    char *buf1 = malloc(100);
     /* ... and some more stuff */
     volatile char *buf2 = malloc(100);
 

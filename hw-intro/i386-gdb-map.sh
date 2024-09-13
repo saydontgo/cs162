@@ -11,4 +11,4 @@ fi
 env -i \
   TERM=xterm-256color \
   PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/workspace/.bin:/home/workspace/.cargo/bin \
-  i386-gdb map
+  i386-gdb map 

@@ -1,5 +1,8 @@
 CC?=gcc
 
+DEFS = -D CS162
+CFLAGS += $(DEFS)
+
 ifneq (,$(shell which i386-gcc))
 CC=i386-gcc
 endif

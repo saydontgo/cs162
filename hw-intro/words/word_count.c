@@ -33,7 +33,8 @@ char *new_string(char *str) {
 }
 
 int init_words(WordCount **wclist) {
-  /* Initialize word count.
+  /*
+     Initialize word count.
      Returns 0 if no errors are encountered
      in the body of this function; 1 otherwise.
   */
@@ -41,18 +42,36 @@ int init_words(WordCount **wclist) {
   return 0;
 }
 
-ssize_t len_words(WordCount *wchead) {
+size_t len_words(WordCount *wchead) {
   /* Return -1 if any errors are
      encountered in the body of
      this function.
   */
-    size_t len = 0;
+    size_t len = 1;
+    if(wchead==NULL)
+    return 0;
+    WordCount* travel=wchead;
+    while(travel->next!=NULL)
+    {
+      len++;
+      travel=travel->next;
+    }
     return len;
 }
 
 WordCount *find_word(WordCount *wchead, char *word) {
   /* Return count for word, if it exists */
   WordCount *wc = NULL;
+  WordCount* travel=wchead;
+  while(travel!=NULL)
+  {
+     if(strcmp(travel->word,word)==0)
+     {
+      wc=travel;
+      break;
+     }
+     travel=travel->next;
+  }
   return wc;
 }
 
@@ -61,6 +80,38 @@ int add_word(WordCount **wclist, char *word) {
      Otherwise insert with count 1.
      Returns 0 if no errors are encountered in the body of this function; 1 otherwise.
   */
+ int word_count=len_words(*wclist);
+ if(word_count==0)
+ {
+   *wclist=(WordCount*)malloc(sizeof(char*)+sizeof(int)+sizeof(WordCount*));
+   if(*wclist==NULL)
+   return 1;
+   (*wclist)->count=1;
+   (*wclist)->word=new_string(word);
+   (*wclist)->next=NULL;
+   return 0;
+ }
+ WordCount* travel=*wclist;
+ WordCount* prev_travel;
+ while(travel!=NULL)
+ {
+    if(strcmp(travel->word,word)==0)
+     {
+      break;
+     }
+     prev_travel=travel;
+     travel=travel->next;
+ }
+ if(travel==NULL)
+ {
+   prev_travel->next=(WordCount*)malloc(sizeof(char*)+sizeof(int)+sizeof(WordCount*));
+   if(prev_travel->next==NULL)
+   return 1;
+   (prev_travel->next)->count=1;
+   (prev_travel->next)->word=new_string(word);
+   (prev_travel->next)->next=NULL;
+ }
+ else travel->count++;
  return 0;
 }
 
@@ -71,3 +122,5 @@ void fprint_words(WordCount *wchead, FILE *ofile) {
     fprintf(ofile, "%i\t%s\n", wc->count, wc->word);
   }
 }
+
+
