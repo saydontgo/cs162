@@ -130,23 +130,34 @@ static void start_process(void* argvs_) {
   }
 
   if(success){
+    /*存入argv[argc]，保持栈结构*/
     if_.esp-=4;
-    /* 将命令行相关信息推入栈*/
+
+    /* 将命令行的所有参数推入栈*/
   for(int i=0;i<args;i++)
   if_.esp=push_str_into_stack(argv[i],if_.esp);
   
-  int stack_align=16-(0xc0000000-4 - (unsigned int)if_.esp)%16;
+  /*设置对齐标准*/
+  int stack_align=16-(0xc0000000-4 - (unsigned int)if_.esp)%16;//16字节对齐
   if(stack_align!=16)
   if_.esp-=stack_align;
+
+  /*存入命令行参数的指针*/
   for(int i=0;i<args;i++)
   {
     if_.esp-=4;
     memcpy(if_.esp,&argv[i],4);
   }
+
+  /*存入命令行字符串数组的头位置*/
   if_.esp-=4;
   memcpy(if_.esp,&argv,4);
+
+  /*存入argc*/
   if_.esp-=4;
   memcpy(if_.esp,&argc,4);
+
+  /*存入fake_return_address*/
   if_.esp-=4;
   }
 
