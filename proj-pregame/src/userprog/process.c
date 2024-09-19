@@ -1,3 +1,4 @@
+#define MAXARGV 30      //命令行最大参数
 #include "userprog/process.h"
 #include <debug.h>
 #include <inttypes.h>
@@ -69,10 +70,19 @@ pid_t process_execute(const char* file_name) {
   return tid;
 }
 
+/*将字符串推入栈中，并返回栈指针*/
+uint32_t push_str_into_stack(const char* arg,uint32_t esp)
+{
+  int size=strlen(arg)+1;
+  esp-=size;
+  memcpy((void*)esp,arg,size);
+  return esp;
+}
+
 /* A thread function that loads a user process and starts it
    running. */
-static void start_process(void* file_name_) {
-  char* file_name = (char*)file_name_;
+static void start_process(void* argvs_) {
+  char* argvs = (char*)argvs_;
   struct thread* t = thread_current();
   struct intr_frame if_;
   bool success, pcb_success;
@@ -81,6 +91,23 @@ static void start_process(void* file_name_) {
   struct process* new_pcb = malloc(sizeof(struct process));
   success = pcb_success = new_pcb != NULL;
 
+  /*计算命令行参数个数并将命令行存入argv中*/
+  int argc=0;
+  char *argv[MAXARGV];
+  int args;
+  if(success){
+  char *saveptr;
+  char *token=strtok_r(argvs," ",&saveptr);
+  int index=0;
+  while(token!=NULL&&index<MAXARGV)
+  {
+    
+    argv[index++]=token;
+    token=strtok_r(NULL," ",&saveptr);
+    argc++;
+  }
+  args=index;
+  }
   /* Initialize process control block */
   if (success) {
     // Ensure that timer_interrupt() -> schedule() -> process_activate()
@@ -99,7 +126,28 @@ static void start_process(void* file_name_) {
     if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
     if_.cs = SEL_UCSEG;
     if_.eflags = FLAG_IF | FLAG_MBS;
-    success = load(file_name, &if_.eip, &if_.esp);
+    success = load(argvs_, &if_.eip, &if_.esp);
+  }
+
+  if(success){
+    if_.esp-=4;
+    /* 将命令行相关信息推入栈*/
+  for(int i=0;i<args;i++)
+  if_.esp=push_str_into_stack(argv[i],if_.esp);
+  
+  int stack_align=16-(0xc0000000-4 - (unsigned int)if_.esp)%16;
+  if(stack_align!=16)
+  if_.esp-=stack_align;
+  for(int i=0;i<args;i++)
+  {
+    if_.esp-=4;
+    memcpy(if_.esp,&argv[i],4);
+  }
+  if_.esp-=4;
+  memcpy(if_.esp,&argv,4);
+  if_.esp-=4;
+  memcpy(if_.esp,&argc,4);
+  if_.esp-=4;
   }
 
   /* Handle failure with succesful PCB malloc. Must free the PCB */
@@ -113,16 +161,13 @@ static void start_process(void* file_name_) {
   }
 
   /* Clean up. Exit on failure or jump to userspace */
-  palloc_free_page(file_name);
+  palloc_free_page(argvs_);
   if (!success) {
     sema_up(&temporary);
     thread_exit();
   }
-
-  /* 降低esp地址，防止访问内核代码*/
-  if_.esp-=0xd;
-
-  /* Start the user process by simulating a return from an
+  
+    /* Start the user process byq simulating a return from an
      interrupt, implemented by intr_exit (in
      threads/intr-stubs.S).  Because intr_exit takes all of its
      arguments on the stack in the form of a `struct intr_frame',
