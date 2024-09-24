@@ -44,12 +44,6 @@ int main(int argc, char* argv[]) {
       exit(-1);
     }
   }
-  printf("...............................\n");
-  printf("leaving\n");
-  printf("...............................\n");
   /* Last thing that main() should do */
   pthread_exit(NULL);
-  printf("...............................\n");
-  printf("leavinglast\n");
-  printf("...............................\n");
 }
