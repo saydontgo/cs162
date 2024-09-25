@@ -48,9 +48,7 @@ void* threadfun(void*arg)
         printf("%s文件无法打开\n",p->filename);
         exit(-1);
   }
-  pthread_mutex_lock(&p->word_counts->lock);
   count_words(p->word_counts,f);
-  pthread_mutex_unlock(&p->word_counts->lock);
   fclose(f);
   pthread_exit(NULL);
 }
@@ -82,7 +80,6 @@ int main(int argc, char* argv[]) {
 
       //调试信息
       tmp[i]->tid=i;
-
       int rc = pthread_create(&threads[i], NULL, threadfun, (void*)tmp[i]);
       if (rc) {
       printf("ERROR; return code from pthread_create() is %d\n", rc);
