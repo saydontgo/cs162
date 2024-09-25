@@ -34,14 +34,24 @@
 #define MAX_THREAD 64
 typedef struct pa{
   word_count_list_t*word_counts;
-  FILE*f;
-  int tid;
+  char*filename;
+  int tid;//用于调试
 }passing_argv;
 
 void* threadfun(void*arg)
 {
   passing_argv *p=arg;
-  count_words(p->word_counts,p->f);
+  FILE *f;
+  f = fopen(p->filename,"r");
+  if(!f)
+  {
+        printf("%s文件无法打开\n",p->filename);
+        exit(-1);
+  }
+  pthread_mutex_lock(&p->word_counts->lock);
+  count_words(p->word_counts,f);
+  pthread_mutex_unlock(&p->word_counts->lock);
+  fclose(f);
   pthread_exit(NULL);
 }
 
@@ -53,6 +63,8 @@ int main(int argc, char* argv[]) {
   /* Create the empty data structure. */
   word_count_list_t *word_counts=malloc(sizeof(word_count_list_t));
   init_words(word_counts);
+  pthread_mutex_t lock=PTHREAD_MUTEX_INITIALIZER;
+  word_counts->lock=lock;
 
   if (argc <= 1) {
     /* Process stdin in a single thread. */
@@ -60,30 +72,28 @@ int main(int argc, char* argv[]) {
   } else {
     /* TODO */
     pthread_t threads[MAX_THREAD];
+    passing_argv*tmp[MAX_THREAD];
     for(int i=1;i<argc;i++)
     {
-      FILE*f = fopen(argv[i],"r");
-      if(!f)
-      {
-        printf("%s文件无法打开\n",argv[i]);
-        exit(-1);
-      }
-      passing_argv*tmp=malloc(sizeof(passing_argv));
-      tmp->f=f;
-      tmp->word_counts=word_counts;
+      
+      tmp[i]=malloc(sizeof(passing_argv));
+      tmp[i]->filename=argv[i];
+      tmp[i]->word_counts=word_counts;
 
       //调试信息
-      tmp->tid=i;
+      tmp[i]->tid=i;
 
-      int rc = pthread_create(&threads[i], NULL, threadfun, (void*)tmp);
+      int rc = pthread_create(&threads[i], NULL, threadfun, (void*)tmp[i]);
       if (rc) {
       printf("ERROR; return code from pthread_create() is %d\n", rc);
       exit(-1);
       }
+    }
 
+    for(int i=1;i<argc;i++)
+    {        
       pthread_join(threads[i],NULL);
-      free(tmp);
-      fclose(f);
+      free(tmp[i]);
     }
   }
 
