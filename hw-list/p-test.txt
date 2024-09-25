@@ -1,6 +1,3 @@
-gutenberg/peter.txt
-gutenberg/alice.txt
-gutenberg/sawyer.txt
        1	aback
        1	abandoning
        1	abash
